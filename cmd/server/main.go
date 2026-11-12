@@ -8,8 +8,14 @@ import (
 
 func main() {
 	tsk := handler.NewTaskHandler()
+
+	for i := 1; i <= 3; i++ {
+        go tsk.StartWorker(i)
+    }
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("/task", tsk.Tasks)
+	mux.HandleFunc("/task/{id}", tsk.GetTask)
 
 	http.ListenAndServe("localhost:8080", mux)
 }

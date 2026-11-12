@@ -16,10 +16,10 @@ const (
 )
 
 type Task struct {
-	ID        int
-	Status    TaskState
-	CreatedAt time.Time
-	
+	ID          int       `json:"ID"`
+	Status      TaskState `json:"Status"`
+	CreatedAt   time.Time `json:"CreatedAt"`
+	Description string    `json:"Description"`
 }
 
 func (t *Task) Do() string {
