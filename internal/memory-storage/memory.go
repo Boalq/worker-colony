@@ -21,6 +21,9 @@ func NewInMemoryStorage() *InMemoryStorage {
 }
 
 func (m *InMemoryStorage) SaveTask(newTask task.Task) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	
 	for _, task := range m.tasks {
 		if task == newTask {
 			return
@@ -31,6 +34,9 @@ func (m *InMemoryStorage) SaveTask(newTask task.Task) {
 }
 
 func (m *InMemoryStorage) GetTask(id int) (task.Task, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
 	for _, task := range m.tasks {
 		if task.ID == id {
 			return task, nil
@@ -59,6 +65,9 @@ func (m *InMemoryStorage) UpdateTask(id int, status task.TaskState) error {
 }
 
 func (m *InMemoryStorage) String() string {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	
 	var buf bytes.Buffer
 	buf.WriteString("A Memory Storage:\n")
 	for task := range m.tasks {

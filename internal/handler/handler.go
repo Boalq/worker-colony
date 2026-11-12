@@ -14,14 +14,14 @@ import (
 )
 
 type TaskHandler struct {
-	storage memorystorage.InMemoryStorage
+	storage *memorystorage.InMemoryStorage
 	queue   chan task.Task
 	counter atomic.Int64
 }
 
 func NewTaskHandler() *TaskHandler {
 	return &TaskHandler{
-		storage: *memorystorage.NewInMemoryStorage(),
+		storage: memorystorage.NewInMemoryStorage(),
 		queue:   make(chan task.Task, 3),
 		counter: atomic.Int64{},
 	}
@@ -41,11 +41,14 @@ func (h *TaskHandler) Tasks(w http.ResponseWriter, r *http.Request) {
 
 	h.storage.SaveTask(t)
 
-	h.queue <- t
-
-	w.WriteHeader(http.StatusAccepted)
-	fmt.Fprintf(w, "task rn in the making\n")
-
+	select {
+	case h.queue <- t:
+		w.WriteHeader(http.StatusAccepted)
+		fmt.Fprintf(w, "task rn in the making\n")
+	default:
+		w.WriteHeader(http.StatusServiceUnavailable)
+		fmt.Fprintf(w, "queue full, try again later\n")
+	}
 }
 
 func (h *TaskHandler) StartWorker(WorkerID int) {
@@ -53,7 +56,7 @@ func (h *TaskHandler) StartWorker(WorkerID int) {
 		err := h.storage.UpdateTask(tsk.ID, task.Running)
 		if err != nil {
 			fmt.Printf("Error: %s while working on the task\n", err)
-			return
+			continue
 		}
 
 		fmt.Printf("Worker %d working on task %d\n", WorkerID, tsk.ID)
@@ -63,7 +66,7 @@ func (h *TaskHandler) StartWorker(WorkerID int) {
 		err = h.storage.UpdateTask(tsk.ID, task.Completed)
 		if err != nil {
 			fmt.Printf("Error: %s while working on the task\n", err)
-			return
+			continue
 		}
 
 		fmt.Printf("Worker %d finished task %d\nDescription: %s\n", WorkerID, tsk.ID, tsk.Description)
@@ -76,7 +79,7 @@ func (h *TaskHandler) GetTask(w http.ResponseWriter, r *http.Request) {
 
 	t, err := h.storage.GetTask(id)
 	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
+		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintf(w, "Error: %s", err)
 		return
 	}

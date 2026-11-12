@@ -14,8 +14,8 @@ func main() {
     }
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/task", tsk.Tasks)
-	mux.HandleFunc("/task/{id}", tsk.GetTask)
+	mux.HandleFunc("POST /task", tsk.Tasks)
+	mux.HandleFunc("GET /task/{id}", tsk.GetTask)
 
 	http.ListenAndServe("localhost:8080", mux)
 }
