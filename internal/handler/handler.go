@@ -52,7 +52,7 @@ func (h *TaskHandler) Tasks(w http.ResponseWriter, r *http.Request) {
 	select {
 	case h.queue <- t:
 		w.WriteHeader(http.StatusAccepted)
-		fmt.Fprintf(w, "task rn in the making\n")
+		fmt.Fprintf(w, "task is being processed => ID: %d\n", id)
 	default:
 		w.WriteHeader(http.StatusServiceUnavailable)
 		fmt.Fprintf(w, "queue full, try again later\n")
