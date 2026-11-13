@@ -5,21 +5,26 @@ import (
 	"errors"
 	"fmt"
 	"sync"
-
 	"github.com/Boalq/worker-colony/internal/task"
 )
 
+// The Struct of the Memory Storage
+// A mutex that prevents any race condititons
+// The actual hashmap that stores the Task Structs
 type InMemoryStorage struct {
 	mu    sync.RWMutex
 	tasks map[int]task.Task
 }
 
+// "Constructor"
 func NewInMemoryStorage() *InMemoryStorage {
 	return &InMemoryStorage{
 		tasks: make(map[int]task.Task),
 	}
 }
 
+// A adding/saving method for new incomign Tasks
+// Due to the mu.Lock() it is concurrency safe
 func (m *InMemoryStorage) SaveTask(newTask task.Task) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -33,6 +38,7 @@ func (m *InMemoryStorage) SaveTask(newTask task.Task) {
 	m.tasks[newTask.ID] = newTask
 }
 
+// Getter Method for a Task in the Memory Storage (not preffered)
 func (m *InMemoryStorage) GetTask(id int) (task.Task, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -46,6 +52,7 @@ func (m *InMemoryStorage) GetTask(id int) (task.Task, error) {
 	return task.Task{}, errors.New("Task Not Found")
 }
 
+// Update a already existing Task
 func (m *InMemoryStorage) UpdateTask(id int, status task.TaskState) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -64,6 +71,7 @@ func (m *InMemoryStorage) UpdateTask(id int, status task.TaskState) error {
 	return nil
 }
 
+// Stringer() interface method for debugging/logging
 func (m *InMemoryStorage) String() string {
 	m.mu.RLock()
 	defer m.mu.RUnlock()

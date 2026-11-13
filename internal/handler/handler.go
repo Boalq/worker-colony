@@ -13,12 +13,17 @@ import (
 	"github.com/Boalq/worker-colony/internal/task"
 )
 
+// TaskHandler struct that has
+// A temporary storage to keep a collection of tasks
+// Queue for buffered concurrent tasks
+// Counter for ID assigments of incoming tasks
 type TaskHandler struct {
 	storage *memorystorage.InMemoryStorage
 	queue   chan task.Task
 	counter atomic.Int64
 }
 
+// "Constructor" for a new Task Handler 
 func NewTaskHandler() *TaskHandler {
 	return &TaskHandler{
 		storage: memorystorage.NewInMemoryStorage(),
@@ -27,6 +32,7 @@ func NewTaskHandler() *TaskHandler {
 	}
 }
 
+// Adding a Task to the TaskHandler Struct
 func (h *TaskHandler) Tasks(w http.ResponseWriter, r *http.Request) {
 	id := h.counter.Add(1)
 	body, err := io.ReadAll(r.Body)
@@ -41,6 +47,8 @@ func (h *TaskHandler) Tasks(w http.ResponseWriter, r *http.Request) {
 
 	h.storage.SaveTask(t)
 
+	// Http response for the User to verify if the task has been
+	// stored in the memory and queued up in the Channel
 	select {
 	case h.queue <- t:
 		w.WriteHeader(http.StatusAccepted)
@@ -51,6 +59,8 @@ func (h *TaskHandler) Tasks(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// A Worker (bee) instance with an Designaited ID Number
+// for logging and monitoring concurrent work on the Tasks
 func (h *TaskHandler) StartWorker(WorkerID int) {
 	for tsk := range h.queue {
 		err := h.storage.UpdateTask(tsk.ID, task.Running)
@@ -73,6 +83,7 @@ func (h *TaskHandler) StartWorker(WorkerID int) {
 	}
 }
 
+// Getter Method for a Task (usually not that prefered)
 func (h *TaskHandler) GetTask(w http.ResponseWriter, r *http.Request) {
 	asked_id := r.PathValue("id")
 	id, _ := strconv.Atoi(asked_id)

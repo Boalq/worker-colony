@@ -2,12 +2,12 @@ package task
 
 import (
 	"errors"
-	"fmt"
 	"time"
 )
 
 type TaskState int
 
+// "Enums" for the state of the Tasks
 const (
 	Pending TaskState = iota
 	Running
@@ -15,6 +15,9 @@ const (
 	Failed
 )
 
+// This is a Mock "Task" Struct, thus the main focus is on the
+// actual mechanism of the Worker and Http request handling
+// JSON tags for encoding and decoding so it is suited for any API use
 type Task struct {
 	ID          int       `json:"ID"`
 	Status      TaskState `json:"Status"`
@@ -22,11 +25,8 @@ type Task struct {
 	Description string    `json:"Description"`
 }
 
-func (t *Task) Do() string {
-	t.Status = Completed
-	return fmt.Sprintf("Task ID:%d done(%d)", t.ID, t.Status)
-}
-
+// Transition Machine with Rules on what transitions are
+// allowed and what not
 func (t *Task) TransitionTo(newStatus TaskState) error {
 	switch {
 	case t.Status == Pending && newStatus == Running:
